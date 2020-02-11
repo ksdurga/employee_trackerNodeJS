@@ -32,7 +32,7 @@ const initialize = () => {
       case "Add Data":
         CRUD.addData();
       break;
-      case "Modify Data":
+      case "Update Data":
         CRUD.updateData();;
       break;
     };

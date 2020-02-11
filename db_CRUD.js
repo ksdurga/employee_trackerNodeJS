@@ -40,10 +40,34 @@ let employeeQuestions = [
   }
 ];
 
+let departmentQuestions = [
+  {
+    type: "input",
+    message: "Enter department name",
+    name: "name"
+  }
+];
+
+let roleQuestions = [
+  {
+    type: "input",
+    message: "Enter role title",
+    name: "title"
+  },
+  {
+    type: "number",
+    message: "Enter salary amount",
+    name: "salary"
+  },
+  {
+    type: "input",
+    message: "Enter department ID",
+    name: "departmentID"
+  }
+];
 
 
-
-//EMPLOYEE TABLE STUFF
+/*EMPLOYEE TABLE STUFF*/
 //add new employee
 const addEmployee = (item) => {
   console.log("Adding employee...\n");
@@ -72,30 +96,44 @@ const askEmployee = () => {
 function updateEmployee(item) {
   console.log("Updating Employee...\n");
   let query = connection.query(
-    "UPDATE employees SET first_name = ?, last_name = ?, role_id = ?, manager_id = ? WHERE id = ?",
+    "UPDATE employees SET ? WHERE ?",
     [
       {
         first_name: item.firstName,
-        last_name: lastName,
-        role_id: roleId,
+        last_name: item.lastName,
+        role_id: item.roleId,
         manager_id: managerId
       },
       {
-        id: item.id //should have used id because there could be duplicate data
+        id: item.name
       }
     ],
     function(err, res) {
       if (err) throw err;
       console.log(res.affectedRows + " products updated!\n");
-      sellProduct(item);
-
-      // Call deleteProduct AFTER the UPDATE completes
+      viewEmployees();
     }
   );
+};
 
-  // logs the actual query being run
-  console.log(query.sql);
+let employeeList = () => {
+  connection.query("SELECT * FROM employees", function(err, res) {
+    if (err) throw err;
+    return res.first_name
+    // Log all results of the SELECT statement
+  });
 }
+
+let updateEmployeePrompt = () => {
+  inquirer.prompt({
+    type: "list",
+    message: "Choose an employee to update",
+    choices: employeeList(),
+    name: "name"
+  }).then(function(data){
+    updateEmployee(data);
+  })
+};
 
 function deleteEmployee(item) {
   console.log("Success!  The employee has been deleted...\n");
@@ -109,10 +147,9 @@ function deleteEmployee(item) {
       console.log(res.affectedRows + " SOLD!\n");
       // Call readProducts AFTER the DELETE completes
       readProducts();
-      connection.end();
     }
   );
-}
+};
 
 function viewEmployees() {
   console.log("All employees:\n");
@@ -124,7 +161,7 @@ function viewEmployees() {
   });
 };
 
-//ROLES
+/*ROLES*/
 function viewRoles() {
   console.log("All roles:\n");
   connection.query("SELECT * FROM roles", function(err, res) {
@@ -135,7 +172,30 @@ function viewRoles() {
   });
 };
 
-//DEPARTMENTS
+const addRole = (item) => {
+  console.log("Adding role...\n");
+  let query = connection.query("INSERT INTO roles SET ?", 
+    {
+      title: item.title,  //should have used id because there could be duplicate data
+      salary: item.salary,
+      department_id: item.departmentId
+    },
+    function(err, res) {
+      if (err) throw err;
+    }
+  );
+
+  // logs the actual query being run
+  viewRoles();
+};
+
+const askRole = () => {
+  inquirer.prompt(roleQuestions).then(function(data){
+    addRole(data);
+  })
+};
+
+/*DEPARTMENTS*/
 function viewDepartments() {
   console.log("All departments:\n");
   connection.query("SELECT * FROM departments", function(err, res) {
@@ -147,7 +207,7 @@ function viewDepartments() {
 };
 
 const addDepartment = (item) => {
-  console.log("Adding employee...\n");
+  console.log("Adding department...\n");
   let query = connection.query("INSERT INTO departments SET ?", 
     {
       name: item.name,
@@ -158,7 +218,7 @@ const addDepartment = (item) => {
   );
 
   // logs the actual query being run
-  viewEmployees();
+  viewDepartments();
 };
 
 const askDepartment = () => {
@@ -167,7 +227,7 @@ const askDepartment = () => {
   })
 };
 
-//ALL
+/*ALL*/
 const viewData = () => {
   inquirer.prompt({
     type: "list",
@@ -201,14 +261,35 @@ const addData = () => {
         askEmployee();
       break;
       case "Add new department":
-        addDepartment();
+        askDepartment();
       break;
       case "Add new role":
-        addRole();
+        askRole();
       break;
     }
   })
-}
+};
+
+const updateData = () => {
+  inquirer.prompt({
+    type: "list",
+    message: "Pick an action",
+    choices: ["Update an employee", "Update a department", "Update a role"],
+    name: "action"
+  }).then(function(answers) {
+    switch (answers.action) {
+      case "Update an employee":
+        updateEmployeePrompt();
+      break;
+      case "Update a department":
+        updateDepartment();
+      break;
+      case "Update a role":
+        updateRole();
+      break;
+    }
+  })
+};
 
 module.exports = {
   viewData:viewData,
@@ -217,7 +298,10 @@ module.exports = {
   viewRoles:viewRoles,
   addData:addData,
   addEmployee:addEmployee,
-  askEmployee:askEmployee
+  askEmployee:askEmployee,
+  askDepartment:askDepartment,
+  askRole:askRole,
+  updateData:updateData
   // addDepartment:addDepartment,
   // addRole:addRole
 };
